@@ -1,0 +1,59 @@
+.slideshow {
+  height: 386px;
+}
+.slideshow .slide-overlay {
+  background: -webkit-linear-gradient(0deg,rgba(0,0,0,0.3) 0%,rgba(0,0,0,0.7) 100%);
+  background: -moz-linear-gradient(0deg,rgba(0,0,0,0.3) 0%,rgba(0,0,0,0.7) 100%);
+  background: -ms-linear-gradient(0deg,rgba(0,0,0,0.3) 0%,rgba(0,0,0,0.7) 100%);
+  background: -o-linear-gradient(0deg,rgba(0,0,0,0.3) 0%,rgba(0,0,0,0.7) 100%);
+  background: linear-gradient(180deg,rgba(0,0,0,0.3) 0%,rgba(0,0,0,0.7) 100%);
+  bottom: 0;
+  height: 35%;
+  position: absolute;
+  width: 100%;
+}
+.slider {
+  overflow: hidden;
+}
+.slider .slides {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+}
+.slider .slides .slides-wrap {
+  white-space: nowrap;
+  left: 0;
+  position: relative;
+}
+.slider .slides .slides-wrap.right {
+  margin-left: -100%;
+  margin-right: 100%;
+  -webkit-transition: margin 0.6s ease-in-out 0s;
+  -moz-transition: margin 0.6s ease-in-out 0s;
+  -ms-transition: margin 0.6s ease-in-out 0s;
+  -o-transition: margin 0.6s ease-in-out 0s;
+  transition: margin 0.6s ease-in-out 0s;
+}
+.slider .slides .slides-wrap.left {
+  left: -100%;
+  margin-left: 100%;
+  margin-right: -100%;
+  -webkit-transition: margin 0.6s ease-in-out 0s;
+  -moz-transition: margin 0.6s ease-in-out 0s;
+  -ms-transition: margin 0.6s ease-in-out 0s;
+  -o-transition: margin 0.6s ease-in-out 0s;
+  transition: margin 0.6s ease-in-out 0s;
+}
+.slider .slides .slide {
+  display: none;
+  vertical-align: top;
+  width: 100%;
+}
+.slider .slides .slide img {
+  display: block;
+  width: 100%;
+}
+.slider .slides .slide.show,
+.slider .slides .slide.active {
+  display: inline-block;
+}

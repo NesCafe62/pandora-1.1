@@ -1,0 +1,78 @@
+@import "../../../core/css/base.less";
+
+.slideshow {
+	height: 386px;
+	
+	.slides .slide img {
+		// margin-top: -12.5%;
+	}
+	
+	
+	.slide-overlay {
+		.gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.7));
+		bottom: 0;
+		height: 35%;
+		.absolute;
+		width: 100%;
+		
+	}
+}
+
+.slider {
+
+	overflow: hidden;
+
+	.slide-bg {
+	}
+	
+/*	.slide {
+		display: none;
+
+		img {
+			.block;
+			width: 100%;
+		}
+		
+		&.show {
+			.block;
+		}
+	} */
+
+	.slides {
+		.relative;
+		overflow: hidden;
+		width: 100%;
+		.slides-wrap {
+			white-space: nowrap;
+			left: 0;
+			.relative;
+			&.right {
+				// .transition(0.6s,ease-in-out,left);
+				// left: -100%;
+				margin-left: -100%;
+				margin-right: 100%;
+				.transition(0.6s,ease-in-out,margin);
+			}
+			&.left {
+				left: -100%;
+				margin-left: 100%;
+				margin-right: -100%;
+				.transition(0.6s,ease-in-out,margin);
+			}
+		}
+		.slide {
+			display: none;
+			vertical-align: top;
+			width: 100%;
+
+			img {
+				.block;
+				width: 100%;
+			}
+			&.show, &.active {
+				.inline-block;
+			}
+		}
+	}
+
+}

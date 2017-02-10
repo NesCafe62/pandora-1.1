@@ -1,0 +1,37 @@
+{
+	fields: [
+		title: {
+			;
+		},
+		price: {
+			;
+		},
+		pages: {
+		},
+		filename {
+		},
+		images: {
+			;
+		},
+		description: {
+		},
+		meta_description: {
+		},
+		meta_keywords: {
+		},
+		published: {
+		},
+		id: {
+		}
+	],
+	toolbar: {
+		'button:submit': {
+		},
+		'button:back': {
+		}
+	}
+	validation: true
+	attr: {
+		;
+	}
+}

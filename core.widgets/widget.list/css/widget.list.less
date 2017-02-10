@@ -1,0 +1,56 @@
+@import "../../../core/css/base.less";
+
+ul.list {
+	list-style: none;
+}
+
+.list {
+	&.align-right {
+		text-align: right;
+	}
+	&.align-middle {
+		text-align: middle;
+	}
+
+	.item {
+		vertical-align: middle;
+		text-align: left;
+		a {
+			.block;
+			.no-underline;
+		}
+		div {
+			line-height: 1.35em;
+			vertical-align: middle;
+		}
+		.height-fix {
+			display: inline-block !important;
+			height: 100% !important;
+			vertical-align: middle !important;
+		}
+	}
+
+	&.horizontal {
+		.item {
+			padding: 0 10px;
+			.inline-block;
+			height: 100%;
+			a {
+				.inline-block;
+				margin: 0 -10px;
+				padding: 0 10px;
+			}
+			div {
+				.inline-block;
+			}
+		}
+	}
+
+
+	&.theme-flat {
+		.item {
+			;
+		}
+	}
+
+}

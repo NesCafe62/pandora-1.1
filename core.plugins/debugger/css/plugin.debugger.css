@@ -1,0 +1,275 @@
+body {
+  margin: 0;
+  height: 100%;
+}
+.debugger-console {
+  font-family: Verdana, "Geneva CY", "DejaVu Sans", sans-serif;
+  font-size: 13px;
+}
+.debugger-console span,
+.debugger-console pre,
+.debugger-console p,
+.debugger-console a {
+  margin: 0;
+  padding: 0;
+}
+form {
+  margin: 0;
+}
+.debugger-height {
+  height: 170px;
+  clear: both;
+}
+.debugger-console {
+  height: 170px;
+  background: #FFF;
+  position: fixed;
+  width: 100%;
+  z-index: 100;
+  bottom: 0;
+  -webkit-box-shadow: 0 -1px 0 rgba(0,0,0,0.6);
+  -moz-box-shadow: 0 -1px 0 rgba(0,0,0,0.6);
+  -ms-box-shadow: 0 -1px 0 rgba(0,0,0,0.6);
+  -o-box-shadow: 0 -1px 0 rgba(0,0,0,0.6);
+  box-shadow: 0 -1px 0 rgba(0,0,0,0.6);
+  -webkit-transition: height 0.2s ease-out 0s;
+  -moz-transition: height 0.2s ease-out 0s;
+  -ms-transition: height 0.2s ease-out 0s;
+  -o-transition: height 0.2s ease-out 0s;
+  transition: height 0.2s ease-out 0s;
+}
+.debugger-console .resizing {
+  position: absolute;
+  display: none;
+  bottom: 0;
+  background: rgba(68,68,68,0.2);
+  border-top: 1px solid rgba(119,119,119,0.4);
+  z-index: 101;
+  width: 100%;
+}
+.debugger-console .resize {
+  position: absolute;
+  top: -1px;
+  height: 7px;
+  cursor: n-resize;
+  width: 100%;
+}
+.debugger-console .caption {
+  background: #496470;
+  height: 22px;
+}
+.debugger-console .caption .title {
+  color: #CAE5F4;
+  text-shadow: 0 0 0 #74ADCC;
+  display: inline-block;
+  font-size: 11px;
+  line-height: 22px;
+  padding-left: 8px;
+}
+.debugger-console .caption .close {
+  float: right;
+  padding: 3px;
+}
+.debugger-console .caption .close .icon {
+  background: url(../img/icon-close.png) -16px 0;
+  width: 16px;
+  height: 16px;
+  opacity: 0.8;
+  position: relative;
+  top: -1px;
+}
+.debugger-console .caption .close:hover,
+.debugger-console .caption .close:focus,
+.debugger-console .caption .close.hover {
+  background: #41545F;
+}
+.debugger-console .caption .close:hover .icon,
+.debugger-console .caption .close:focus .icon,
+.debugger-console .caption .close.hover .icon {
+  opacity: 1;
+}
+.debugger-console .debug-content {
+  position: absolute;
+  top: 23px;
+  bottom: 1px;
+  right: 1px;
+  left: 1px;
+  overflow-y: auto;
+}
+.debugger-console .messages {
+  color: #222;
+  font-size: 11px;
+  padding: 4px 0;
+}
+.debugger-console .messages .messages-item {
+  padding: 2px 9px;
+  line-height: 15px;
+}
+.debugger-console .messages .messages-item .channel {
+  float: left;
+  margin-right: 7px;
+}
+.debugger-console .messages .messages-item .message-wrap {
+  padding-left: 60px;
+  line-height: 14px;
+}
+.debugger-console .messages .messages-item .message-wrap pre {
+  display: inline;
+  vertical-align: baseline;
+  line-height: 15px;
+  pointer-events: none;
+}
+.debugger-console .messages .messages-item .message-wrap pre .key {
+  color: #FFF;
+}
+.debugger-console .messages .messages-item .message-wrap pre .val {
+  color: #FFF;
+}
+.debugger-console .messages .messages-item .message-wrap pre.block {
+  display: inline-block;
+}
+.debugger-console .messages .messages-item .message-wrap div {
+  display: inline;
+  margin-right: 6px;
+}
+.debugger-console .messages .messages-item .message-wrap div.line {
+  color: #222;
+}
+.debugger-console .messages .messages-item .message-wrap div.line span {
+  color: #07921D;
+  text-shadow: 0 0 0 #22D33D;
+}
+.debugger-console .messages .messages-item .message-wrap div.row {
+  display: block;
+  margin-bottom: 2px;
+}
+.debugger-console .messages .messages-item .message-wrap div.file {
+  color: #081B82;
+}
+.debugger-console .messages .messages-item .message-wrap div.file,
+.debugger-console .messages .messages-item .message-wrap div.line {
+  display: inline-block;
+}
+.debugger-console .messages .messages-item .message-wrap div.message {
+  cursor: text;
+  display: inline-block;
+  vertical-align: top;
+  min-width: 300px;
+}
+.debugger-console .messages .messages-item .message-wrap div.message .label {
+  color: #081B82;
+  vertical-align: top;
+  margin-right: 6px;
+}
+.debugger-console .messages .messages-item.error .channel {
+  color: #FF3300;
+  text-shadow: 0 0 0 #D91F1F;
+}
+.debugger-console .messages .messages-item.warning .channel {
+  color: #FF7F00;
+  text-shadow: 0 0 0 #D66D27;
+}
+.debugger-console .messages .messages-item.strict,
+.debugger-console .messages .messages-item.deprecated,
+.debugger-console .messages .messages-item.notice {
+  opacity: 0.8;
+}
+.debugger-console .messages .messages-item.strict .channel,
+.debugger-console .messages .messages-item.deprecated .channel,
+.debugger-console .messages .messages-item.notice .channel {
+  color: #8919BF;
+  text-shadow: 0 0 0 #8919BF;
+}
+.debugger-console .messages .messages-item.log .channel {
+  color: #8919BF;
+}
+.debugger-console .messages .messages-item.console .channel {
+  color: #09918A;
+  text-shadow: 0 0 0 #0CBFBC;
+}
+.debugger-console .messages .messages-item.redirect .channel {
+  color: #09918A;
+  text-shadow: 0 0 0 #0CBFBC;
+}
+.debugger-console.theme-dark {
+  -webkit-box-shadow: 0 -1px 0 rgba(0,0,0,0.18);
+  -moz-box-shadow: 0 -1px 0 rgba(0,0,0,0.18);
+  -ms-box-shadow: 0 -1px 0 rgba(0,0,0,0.18);
+  -o-box-shadow: 0 -1px 0 rgba(0,0,0,0.18);
+  box-shadow: 0 -1px 0 rgba(0,0,0,0.18);
+  background: #202B2F;
+}
+.debugger-console.theme-dark .caption {
+  background: #324047;
+}
+.debugger-console.theme-dark .caption .close .icon {
+  top: 0;
+}
+.debugger-console.theme-dark .caption .close:hover,
+.debugger-console.theme-dark .caption .close:focus,
+.debugger-console.theme-dark .caption .close.hover {
+  background: #41545F;
+}
+.debugger-console.theme-dark .resizing {
+  background: rgba(25,49,58,0.2);
+  border-top: 1px solid rgba(75,109,122,0.4);
+}
+.debugger-console.theme-dark .messages {
+  color: #D2E4EE;
+}
+.debugger-console.theme-dark .messages .messages-item .message-wrap pre .key {
+  color: #45FF62;
+}
+.debugger-console.theme-dark .messages .messages-item .message-wrap pre .val {
+  color: #FFFE48;
+}
+.debugger-console.theme-dark .messages .messages-item .message-wrap div.line {
+  color: #D2E4EE;
+}
+.debugger-console.theme-dark .messages .messages-item .message-wrap div.line span {
+  color: #46FF44;
+  text-shadow: none;
+}
+.debugger-console.theme-dark .messages .messages-item .message-wrap div.file {
+  color: #51B1FF;
+}
+.debugger-console.theme-dark .messages .messages-item .message-wrap div.message .label {
+  color: #45FF62;
+  text-shadow: 0 0 1px #024D15;
+}
+.debugger-console.theme-dark .messages .messages-item.error .channel {
+  color: #FF5D00;
+  text-shadow: 0 0 1px #8B0303;
+}
+.debugger-console.theme-dark .messages .messages-item.warning .channel {
+  color: #FF9000;
+  text-shadow: 0 0 0 #E47310;
+}
+.debugger-console.theme-dark .messages .messages-item.strict,
+.debugger-console.theme-dark .messages .messages-item.deprecated,
+.debugger-console.theme-dark .messages .messages-item.notice {
+  background: #28353C;
+}
+.debugger-console.theme-dark .messages .messages-item.strict .channel,
+.debugger-console.theme-dark .messages .messages-item.deprecated .channel,
+.debugger-console.theme-dark .messages .messages-item.notice .channel {
+  color: #E767FF;
+  text-shadow: 0 0 0 #8919BF;
+}
+.debugger-console.theme-dark .messages .messages-item.strict div.file,
+.debugger-console.theme-dark .messages .messages-item.deprecated div.file,
+.debugger-console.theme-dark .messages .messages-item.notice div.file {
+  color: #59B0F7;
+}
+.debugger-console.theme-dark .messages .messages-item.log .channel {
+  color: #3DFFEF;
+  text-shadow: 0 0 0 #0CBFBC;
+}
+.debugger-console.theme-dark .messages .messages-item.console .channel {
+  color: #FFFF00;
+  text-shadow: 0 0 0 #FFF500;
+}
+.debugger-console.theme-dark .messages .messages-item.redirect .channel {
+  color: #FFFF00;
+  text-shadow: 0 0 0 #FFF500;
+}

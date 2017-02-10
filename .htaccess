@@ -1,0 +1,38 @@
+RewriteEngine on
+
+
+# запретить доступ к каталогу webstat
+RewriteCond %{REQUEST_URI} ^/webstat [NC]
+
+RewriteRule ^(.*)$ index.php [L]
+
+
+# редирект с www на домен без www
+RewriteCond %{HTTP_HOST} ^www\.u-238\.ru$ [NC]
+
+		# << не забыть сменить имя домена на правильный!
+RewriteRule ^(.*)$ http://u-238.ru/$1 [R=301,L]
+
+
+# заблокировать параметры PHPE
+RewriteCond %{QUERY_STRING} \=PHPE [NC]
+
+		# << не забыть сменить имя домена на правильный!
+RewriteRule ^(.*)$ http://u-238.ru/? [R=301,L]
+
+
+RewriteCond %{REQUEST_FILENAME} !-f [OR]
+
+# запретить доступ к файлам с защищенным расширением
+RewriteCond %{REQUEST_FILENAME} \.(php|json|ini|dat|cfg|xml|less)$ [NC]
+
+# разрешить доступ к файлам ресурсов (стилей, скриптов и изображений)
+RewriteCond %{REQUEST_FILENAME} !\.(css|js|png|jpg|jpeg)$ [NC]
+
+
+RewriteRule ^(.*)$ index.php [L]
+
+
+RewriteCond %{REQUEST_FILENAME} -d
+# RewriteCond %{REQUEST_URI} ^/res [NC]
+RewriteRule ^(.*)$ index.php [L]

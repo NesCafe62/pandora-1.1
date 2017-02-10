@@ -1,0 +1,12 @@
+{
+	item: {
+		table: 'users',
+		fields: 'id'
+	},
+	items: {
+		table: 'users',
+		fields: [
+			'id', 'login'
+		]
+	}
+}
