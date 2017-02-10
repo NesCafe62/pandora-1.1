@@ -23,6 +23,7 @@ architecture goals:
 Decision was to separate functionality in atomic blocks: plugins, which can tnteract with each other and core/application via events. Also making them unpluggable so you can install/uninstall them (in 1st implementation they were not truly unpluggable, have this project in production (teach4teach.ru) no bugs happend since release).
 
 I came up with this:
+```
 index << include('core/main.php'); core::run();
 [core] {
   [libs]
@@ -48,6 +49,7 @@ plugin architecture:
   ... << custom folders if needeed
   plugin.controller
 }
+```
 
 
 # Feature: Plugin inheritance
