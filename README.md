@@ -4,9 +4,8 @@ PHP framework for building web applications.
 
 # Concept:
 A fast and lightweight framework that allowing to:
-1. get web-applications done faster
-2. prevent slowing down development in a long term
-
+- 1. get web-applications done faster
+- 2. prevent slowing down development in a long term
 CMS are good for quick start and Frameworks are good in reaching 2nd goal.
 
 So why not ot have framework with togglable CMS features so you can install/uninstall them when you need?
