@@ -18,6 +18,7 @@ This architecture needs to combine features of CMS (like from-a-box solutions) a
 architecture goals:
 - less constarints of architecture
 - more clean compact and high-level code in application
+- achieve any custom behavior without patching core (that can obstruct updates)
 - separate appliactions and core locations (to easier core updating and transferring applications and parts of them)
 - security as hight as can to achieve (PDO only and highly carefull with any incoming data: post/get params, url path, user_agent string)
 
