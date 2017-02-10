@@ -8,7 +8,7 @@ A fast and lightweight framework that allowing to:
 - 2. prevent slowing down development in a long term
 CMS are good for quick start and Frameworks are good in reaching 2nd goal.
 
-So why not ot have framework with togglable CMS features so you can install/uninstall them when you need?
+So why not ot have framework with togglable CMS features so you can install/uninstall them when you needed?
 And even have wide possabilities to override their behavior for match buiseness objectives: redefining and making custom logic on top of them?
 - for user/admins: simple to use (full power of CMS gui tools)
 - for programmers: much easier and more enjoyable to write new code
