@@ -318,13 +318,13 @@ class db {
 			return false;
 		}
 
-		$rows->setFetchMode(PDO::FETCH_ASSOC);
+		$rows->setFetchMode(PDO::FETCH_OBJ);
 		$res = $rows->fetch();
 
 		if ($res === false) {
 			return false;
 		}
-		return array_to_object($res);
+		return $res;
 	}
 
 	// select rows
@@ -334,10 +334,10 @@ class db {
 			return false;
 		}
 
-		$rows->setFetchMode(PDO::FETCH_ASSOC);
+		$rows->setFetchMode(PDO::FETCH_OBJ);
 		$res = array();
 		while ($row = $rows->fetch()) {
-			$res[] = array_to_object($row);
+			$res[] = $row;
 		}
 
 		return $res;
@@ -447,6 +447,7 @@ class db {
 		return $field_on;
 	}
 
+	// to-do: vulnerable on without placeholders
 	private static function sql_on_conds($join_on, $table, $join_table) { // , $level = 0
 
 		$on_fields = array();
@@ -459,10 +460,14 @@ class db {
 
 		foreach ($join_on as $field_on => $field_join) {
 			if (is_numeric($field_on)) {
-				// $field_join;
+				if (is_array($field_join)) {
+					// $field_join;
 
-				$on_conds = self::sql_on_conds($field_join, $table, $join_table);
-				$on_fields[] = '('.$on_conds.')';
+					$on_conds = self::sql_on_conds($field_join, $table, $join_table);
+					$on_fields[] = '('.$on_conds.')';
+				} else {
+					$on_fields[] = $field_join;
+				}
 			} else {
 				list($field_on, $op) = self::sql_where_cond($field_on);
 
@@ -604,29 +609,33 @@ class db {
 				$field = 0;
 			} */
 			if (is_numeric($field)) {
-				$sub_where = $val;
+				if (is_array($val)) {
+					$sub_where = $val;
 
-				list($sql_sub_where, $sub_data, $cond_sub_op) = self::sql_where($sub_where, $level);
+					list($sql_sub_where, $sub_data, $cond_sub_op) = self::sql_where($sub_where, $level);
 
-				$data = array_merge($data, $sub_data);
+					$data = array_merge($data, $sub_data);
 
-//				var_dump($op_is_not);
-				// if (!$op_is_not && ($cond_sub_op === $cond_op) ) {
-				if ($cond_sub_op === $cond_op) {
-					if ($sql_sub_where !== '') {
+	//				var_dump($op_is_not);
+					// if (!$op_is_not && ($cond_sub_op === $cond_op) ) {
+					if ($cond_sub_op === $cond_op) {
+						if ($sql_sub_where !== '') {
+							$where_arr[] = $sql_sub_where;
+						}
+					} else {
+						$sub_offset = "\t".'    ';
+						if ($sql_sub_where[0] === '(') {
+							$sql_sub_where = "\n\t".$sql_sub_where;
+						}
+						$sql_sub_where = str_replace("\t", $sub_offset, $sql_sub_where);
+						$sql_sub_where = '('.$sql_sub_where."\n\t".')';
+						if ($cond_sub_op === 'NOT') {
+							$sql_sub_where = 'NOT '.$sql_sub_where;
+						}
 						$where_arr[] = $sql_sub_where;
 					}
 				} else {
-					$sub_offset = "\t".'    ';
-					if ($sql_sub_where[0] === '(') {
-						$sql_sub_where = "\n\t".$sql_sub_where;
-					}
-					$sql_sub_where = str_replace("\t", $sub_offset, $sql_sub_where);
-					$sql_sub_where = '('.$sql_sub_where."\n\t".')';
-					if ($cond_sub_op === 'NOT') {
-						$sql_sub_where = 'NOT '.$sql_sub_where;
-					}
-					$where_arr[] = $sql_sub_where;
+					$where_arr[] = $val;
 				}
 			} else {
 				list($field, $op) = self::sql_where_cond($field);
@@ -752,27 +761,29 @@ class db {
 		return $sql_limit;
 	}
 
+	private static function quot($s) {
+		return '`'.$s.'`';
+	}
+
+
 
 
 	private static $profiling = false;
 
-	public static function query_item($params) {
+	public static function query_item($params, $reset_query = true) {
 		// params: table, where
 		// fields = '*',
 		// join = '',
 		// group by, having
 
-		self::$profiling = false;
-		if (isset($params['profiling']) && $params['profiling']) {
-			self::$profiling = true;
-		}
+		if ($reset_query) {
+			self::$profiling = false;
+			if (isset($params['profiling']) && $params['profiling']) {
+				self::$profiling = true;
+			}
 
-		$debug = false;
-		if (isset($params['debug']) && $params['debug']) {
-			$debug = true;
-			debug::channelPush('sql');
+			self::reset_params();
 		}
-		self::reset_params();
 
 		$query_data = array();
 		if (isset($params['params']) && is_array($params['params'])) {
@@ -781,10 +792,10 @@ class db {
 		}
 
 		list(
-			$fields, $table, $join, $where,
+			$fields, $table, $union, $join, $where,
 			$group_by, $having
 		) = array_to_list($params, array(
-			'fields', 'table', 'join', 'where',
+			'fields', 'table', 'union', 'join', 'where',
 			'group by', 'having'
 		));
 		if ($fields === '') $fields = '*';
@@ -794,25 +805,63 @@ class db {
 			$query_data = $query_params;
 		} */
 
-		// tables
-		// $sql_tables = $table;
-		list($sql_table, $table) = self::sql_table($table);
-		$sql_tables = $sql_table;
-		$tables_fields = array($table => $fields);
-
-		if ($join) {
-			self::$join_level = 0;
-			$res = self::sql_join($table, $join);
-
-			if ($res === false) {
+		if ($union) {
+			if (!is_array($union)) {
+				trigger_error(debug::_('DB_ITEM_ATTR_UNION_MUST_BE_ARRAY'),debug::WARNING);
 				return false;
 			}
 
-			list($sql_join, $join_fields, $data) = $res;
+			if ($join) {
+				trigger_error(debug::_('DB_ITEM_ATTR_JOIN_IGNORED_WHEN_UNION'),debug::WARNING);
+				$join = '';
+			}
 
-			$sql_tables .= $sql_join;
-			$query_data = array_merge($query_data, $data);
-			$tables_fields = array_merge($tables_fields, $join_fields);
+			$union_type = 'union all';
+			if (isset($union['distinct'])) {
+				if ($union['distinct']) { // true
+					$union_type = 'union';
+				}
+				unset($union['distinct']);
+			}
+
+			$union_name = 'union1';
+			if (isset($union['name'])) {
+				$union_name = $union['name'];
+				unset($union['name']);
+			}
+
+			$union_tables = array();
+			foreach ($union as $union_item) {
+				list($union_query, $union_data) = self::query_items($union_item, false);
+				$union_tables[] = $union_query;
+				$query_data = array_merge($query_data, $union_data);
+				// list($union_query, $union_data) = $union_item;
+			}
+
+			$sql_tables = '('.implode(' '.strtoupper($union_type).' ',$union_tables).') as '.$union_name;
+			$table = $union_name;
+
+		} else {
+			// tables
+			// $sql_tables = $table;
+			list($sql_table, $table) = self::sql_table($table);
+			$sql_tables = $sql_table;
+			$tables_fields = array($table => $fields);
+
+			if ($join) {
+				self::$join_level = 0;
+				$res = self::sql_join($table, $join);
+
+				if ($res === false) {
+					return false;
+				}
+
+				list($sql_join, $join_fields, $data) = $res;
+
+				$sql_tables .= $sql_join;
+				$query_data = array_merge($query_data, $data);
+				$tables_fields = array_merge($tables_fields, $join_fields);
+			}
 		}
 
 		// fields
@@ -832,19 +881,16 @@ class db {
 
 		// where
 		$sql_where = '';
-		/* if ($where) {
+		if ($where) {
 			list($sql_where, $data) = self::sql_where($where);
 			$query_data = array_merge($query_data, $data);
-		} */
-
-		if (!$where) {
-			// !!!
-			trigger_error(debug::_('DB_ITEM_ATTR_IS_REQUIRED','where'),debug::WARNING);
-			return false;
+		} else {
+			if (!$union) {
+				// !!!
+				trigger_error(debug::_('DB_ITEM_ATTR_IS_REQUIRED','where'),debug::WARNING);
+				return false;
+			}
 		}
-		// self::$where_level = 0;
-		list($sql_where, $data) = self::sql_where($where);
-		$query_data = array_merge($query_data, $data);
 
 		// group by
 		$sql_group_by = '';
@@ -879,6 +925,21 @@ class db {
 		}
 
 		// 'SELECT $fields FROM $tables WHERE $where GROUP BY $group_by HAVING $having LIMIT 1';
+		return array($query, $query_data);
+	}
+
+
+	private static function _query_item($params) {
+
+		$debug = false;
+		if (isset($params['debug']) && $params['debug']) {
+			$debug = true;
+			debug::channelPush('sql');
+		}
+
+		self::reset_params();
+
+		list($query, $query_data) = self::query_item($params,true);
 
 		$res = self::query_sql_item($query, $query_data, false);
 
@@ -889,7 +950,7 @@ class db {
 		return $res;
 	}
 
-	public static function query_items($params) {
+	public static function query_items($params, $reset_query = true) {
 		// params: table,
 		// where = '',
 		// fields = '*',
@@ -897,17 +958,14 @@ class db {
 		// join = '',
 		// limit, group by, having
 
-		self::$profiling = false;
-		if (isset($params['profiling']) && $params['profiling']) {
-			self::$profiling = true;
-		}
+		if ($reset_query) {
+			self::$profiling = false;
+			if (isset($params['profiling']) && $params['profiling']) {
+				self::$profiling = true;
+			}
 
-		$debug = false;
-		if (isset($params['debug']) && $params['debug']) {
-			$debug = true;
-			debug::channelPush('sql');
+			self::reset_params();
 		}
-		self::reset_params();
 
 		$query_data = array();
 		if (isset($params['params']) && is_array($params['params'])) {
@@ -916,10 +974,10 @@ class db {
 		}
 
 		list(
-			$fields, $table, $join, $where,
+			$fields, $table, $union, $join, $where,
 			$group_by, $having, $order_by, $limit
 		) = array_to_list($params, array(
-			'fields', 'table', 'join', 'where',
+			'fields', 'table', 'union', 'join', 'where',
 			'group by', 'having', 'order by', 'limit'
 		));
 		if ($fields === '') $fields = '*';
@@ -929,25 +987,62 @@ class db {
 			$query_data = $query_params;
 		} */
 
-		// tables
-		// $sql_tables = $table;
-		list($sql_table, $table) = self::sql_table($table);
-		$sql_tables = $sql_table;
-		$tables_fields = array($table => $fields);
-
-		if ($join) {
-			self::$join_level = 0;
-			$res = self::sql_join($table, $join);
-
-			if ($res === false) {
+		if ($union) {
+			if (!is_array($union)) {
+				trigger_error(debug::_('DB_ITEMS_ATTR_UNION_MUST_BE_ARRAY'),debug::WARNING);
 				return false;
 			}
 
-			list($sql_join, $join_fields, $data) = $res;
+			if ($join) {
+				trigger_error(debug::_('DB_ITEMS_ATTR_JOIN_IGNORED_WHEN_UNION'),debug::WARNING);
+				$join = '';
+			}
 
-			$sql_tables .= $sql_join;
-			$query_data = array_merge($query_data, $data);
-			$tables_fields = array_merge($tables_fields, $join_fields);
+			$union_type = 'union all';
+			if (isset($union['distinct'])) {
+				if ($union['distinct']) { // true
+					$union_type = 'union';
+				}
+				unset($union['distinct']);
+			}
+
+			$union_name = 'union1';
+			if (isset($union['name'])) {
+				$union_name = $union['name'];
+				unset($union['name']);
+			}
+
+			$union_tables = array();
+			foreach ($union as $union_item) {
+				list($union_query, $union_data) = self::query_items($union_item, false);
+				$union_tables[] = '    '.str_replace("\n","\n".'    ',$union_query);
+				$query_data = array_merge($query_data, $union_data);
+			}
+
+			$sql_tables = '('."\n".implode("\n".strtoupper($union_type)."\n",$union_tables)."\n".') as '.$union_name;
+			$table = $union_name;
+
+		} else {
+			// tables
+			// $sql_tables = $table;
+			list($sql_table, $table) = self::sql_table($table);
+			$sql_tables = $sql_table;
+			$tables_fields = array($table => $fields);
+
+			if ($join) {
+				self::$join_level = 0;
+				$res = self::sql_join($table, $join);
+
+				if ($res === false) {
+					return false;
+				}
+
+				list($sql_join, $join_fields, $data) = $res;
+
+				$sql_tables .= $sql_join;
+				$query_data = array_merge($query_data, $data);
+				$tables_fields = array_merge($tables_fields, $join_fields);
+			}
 		}
 
 		// fields
@@ -969,7 +1064,6 @@ class db {
 		// where
 		$sql_where = '';
 		if ($where) {
-			// self::$where_level = 0;
 			list($sql_where, $data) = self::sql_where($where);
 			$query_data = array_merge($query_data, $data);
 		}
@@ -1024,6 +1118,21 @@ class db {
 
 		// 'SELECT $fields FROM $tables WHERE $where GROUP BY $group_by HAVING $having ORDER BY $order_by LIMIT $limit';
 
+		return array($query, $query_data);
+	}
+
+	private static function _query_items($params) {
+
+		$debug = false;
+		if (isset($params['debug']) && $params['debug']) {
+			$debug = true;
+			debug::channelPush('sql');
+		}
+
+		self::reset_params();
+
+		list($query, $query_data) = self::query_items($params,true);
+
 		$res = self::query_sql_items($query, $query_data, false);
 
 		if ($debug) {
@@ -1033,22 +1142,19 @@ class db {
 		return $res;
 	}
 
-	public static function query_insert($params) {
+	public static function query_insert($params, $reset_query = true) {
 		// params: table,
 		// fields = [fld1 => val1, fld2 => val2],
 		// join = '',
 
-		self::$profiling = false;
-		if (isset($params['profiling']) && $params['profiling']) {
-			self::$profiling = true;
-		}
+		if ($reset_query) {
+			self::$profiling = false;
+			if (isset($params['profiling']) && $params['profiling']) {
+				self::$profiling = true;
+			}
 
-		$debug = false;
-		if (isset($params['debug']) && $params['debug']) {
-			$debug = true;
-			debug::channelPush('sql');
+			self::reset_params();
 		}
-		self::reset_params();
 
 		$query_data = array();
 		if (isset($params['params']) && is_array($params['params'])) {
@@ -1141,6 +1247,21 @@ class db {
 
 		// 'INSERT INTO $tables ($fields) VALUES ($values)';
 
+		return array($query, $query_data);
+	}
+
+	private static function _query_insert($params) {
+
+		$debug = false;
+		if (isset($params['debug']) && $params['debug']) {
+			$debug = true;
+			debug::channelPush('sql');
+		}
+
+		self::reset_params();
+
+		list($query, $query_data) = self::query_insert($params,true);
+
 		$res = self::query_sql_insert($query,$query_data,false);
 
 		if ($debug) {
@@ -1150,22 +1271,19 @@ class db {
 		return $res;
 	}
 
-	public static function query_insert_rows($params) {
+	public static function query_insert_rows($params, $reset_query = true) {
 		// params: table,
 		// fields = [ row1, row2 ],
 		// join = '',
 
-		self::$profiling = false;
-		if (isset($params['profiling']) && $params['profiling']) {
-			self::$profiling = true;
-		}
+		if ($reset_query) {
+			self::$profiling = false;
+			if (isset($params['profiling']) && $params['profiling']) {
+				self::$profiling = true;
+			}
 
-		$debug = false;
-		if (isset($params['debug']) && $params['debug']) {
-			$debug = true;
-			debug::channelPush('sql');
+			self::reset_params();
 		}
-		self::reset_params();
 
 		$query_data = array();
 		if (isset($params['params']) && is_array($params['params'])) {
@@ -1266,6 +1384,21 @@ class db {
 
 		// 'INSERT INTO $tables ($fields) VALUES ($values1), ($values2)';
 
+		return array($query, $query_data);
+	}
+
+	private static function _query_insert_rows($params) {
+
+		$debug = false;
+		if (isset($params['debug']) && $params['debug']) {
+			$debug = true;
+			debug::channelPush('sql');
+		}
+
+		self::reset_params();
+
+		list($query, $query_data) = self::query_insert_rows($params,true);
+
 		$res = self::query_sql_rows($query,$query_data,false);
 
 		if ($debug) {
@@ -1275,26 +1408,19 @@ class db {
 		return $res;
 	}
 
-	private static function quot($s) {
-		return '`'.$s.'`';
-	}
-
-	public static function query_update($params) {
+	public static function query_update($params, $reset_query = true) {
 		// params: table, fields
 		// where = '',
 		// join = '',
 
-		self::$profiling = false;
-		if (isset($params['profiling']) && $params['profiling']) {
-			self::$profiling = true;
-		}
+		if ($reset_query) {
+			self::$profiling = false;
+			if (isset($params['profiling']) && $params['profiling']) {
+				self::$profiling = true;
+			}
 
-		$debug = false;
-		if (isset($params['debug']) && $params['debug']) {
-			$debug = true;
-			debug::channelPush('sql');
+			self::reset_params();
 		}
-		self::reset_params();
 
 		$query_data = array();
 		if (isset($params['params']) && is_array($params['params'])) {
@@ -1412,6 +1538,21 @@ class db {
 
 		// 'UPDATE $tables SET $fields WHERE $where';
 
+		return array($query, $query_data);
+	}
+
+	private static function _query_update($params) {
+
+		$debug = false;
+		if (isset($params['debug']) && $params['debug']) {
+			$debug = true;
+			debug::channelPush('sql');
+		}
+
+		self::reset_params();
+
+		list($query, $query_data) = self::query_update($params,true);
+
 		$res = self::query_sql_rows($query,$query_data,false);
 
 		if ($debug) {
@@ -1421,22 +1562,19 @@ class db {
 		return $res;
 	}
 
-	public static function query_delete($params) {
+	private static function query_delete($params, $reset_query = true) {
 		// params: table
 		// where = '',
 		// join = '',
 
-		self::$profiling = false;
-		if (isset($params['profiling']) && $params['profiling']) {
-			self::$profiling = true;
-		}
+		if ($reset_query) {
+			self::$profiling = false;
+			if (isset($params['profiling']) && $params['profiling']) {
+				self::$profiling = true;
+			}
 
-		$debug = false;
-		if (isset($params['debug']) && $params['debug']) {
-			$debug = true;
-			debug::channelPush('sql');
+			self::reset_params();
 		}
-		self::reset_params();
 
 		$query_data = array();
 		if (isset($params['params']) && is_array($params['params'])) {
@@ -1500,6 +1638,21 @@ class db {
 
 		// 'DELETE FORM $tables WHERE $where';
 
+		return array($query, $query_data);
+	}
+
+	private static function _query_delete($params) {
+
+		$debug = false;
+		if (isset($params['debug']) && $params['debug']) {
+			$debug = true;
+			debug::channelPush('sql');
+		}
+
+		self::reset_params();
+
+		list($query, $query_data) = self::query_delete($params,false);
+
 		$res = self::query_sql_rows($query,$query_data,false); // reset autoinc
 
 		if ($debug) {
@@ -1534,15 +1687,23 @@ class db {
 			);
 		}
 
-		$required = array('table','where');
+		/* $required = array('table','where');
 		foreach ($required as $attr) {
 			if (!isset($params[$attr]) || ($params[$attr] === '')) {
 				trigger_error(debug::_('DB_ITEM_ATTR_IS_REQUIRED',$attr),debug::WARNING);
 				return false;
 			}
+		} */
+		if ( (!isset($params['table']) || $params['table'] == '') && (!isset($params['union']) || $params['union'] == '') ) {
+			trigger_error(debug::_('DB_ITEMS_ATTR_IS_REQUIRED','table'),debug::WARNING);
+			return false;
+		}
+		if (!isset($params['where']) || $params['where'] == '') {
+			trigger_error(debug::_('DB_ITEMS_ATTR_IS_REQUIRED','where'),debug::WARNING);
+			return false;
 		}
 
-		return self::query_item($params);
+		return self::_query_item($params);
 	}
 
 	// ($params)
@@ -1561,12 +1722,12 @@ class db {
 			);
 		}
 
-		if (!isset($params['table']) || $params['table'] == '') {
+		if ( (!isset($params['table']) || $params['table'] == '') && (!isset($params['union']) || $params['union'] == '') ) {
 			trigger_error(debug::_('DB_ITEMS_ATTR_IS_REQUIRED','table'),debug::WARNING);
 			return false;
 		}
 
-		return self::query_items($params);
+		return self::_query_items($params);
 	}
 
 	// ($params)
@@ -1594,9 +1755,9 @@ class db {
 		}
 
 		if (is_scalar(first($params['fields']))) {
-			return self::query_insert($params);
+			return self::_query_insert($params);
 		} else {
-			return self::query_insert_rows($params);
+			return self::_query_insert_rows($params);
 		}
 	}
 
@@ -1623,7 +1784,7 @@ class db {
 			}
 		}
 
-		return self::query_update($params);
+		return self::_query_update($params);
 	}
 
 	// ($params)
@@ -1653,7 +1814,7 @@ class db {
 			}
 		} */
 
-		return self::query_delete($params);
+		return self::_query_delete($params);
 	}
 
 /*
@@ -1749,13 +1910,13 @@ class table {
 		$query = 'query'.ucfirst($query_name);
 		$query2 = 'query_'.$query_name;
 
-		if (!static_method_exists($table_name,$query) && !static_method_exists($table_name,$query2)) {
+		if (!method_exists($table_name,$query) && !method_exists($table_name,$query2)) {
 			trigger_error(debug::_('TABLE_GET_ITEMS_QUERY_DOESNOT_EXIST',$table_name.'::'.$query),debug::WARNING);
 			return $default;
 		}
 
 		/* deprecated { */
-		if (!static_method_exists($table_name,$query) && static_method_exists($table_name,$query2)) {
+		if (!method_exists($table_name,$query) && method_exists($table_name,$query2)) {
 			$query = $query2;
 			// !! trigger_error(debug::_('TABLE_GET_ITEMS_QUERY_NAME_DEPRECATED',$table_name.'::'.$query2),debug::DEPRECATED);
 		}
@@ -1763,7 +1924,7 @@ class table {
 
 		$query_params = $table_name::$query();
 
-		if (!isset($query_params['table'])) {
+		if (!isset($query_params['table']) && !isset($query_params['union'])) {
 			if (!is_array($query_params)) {
 				$msg = 'TABLE_GET_ITEMS_QUERY_MUST_BE_ARRAY';
 			} else {
@@ -1782,9 +1943,15 @@ class table {
 		}
 
 		// prepare items
-		$prepare_func = 'prepare_'.$query_name;
+		$prepare_func = 'prepare'.ucfirst($query_name);
+		$prepare_func2 = 'prepare_'.$query_name;
 
-		if (method_exists($table_name,$prepare_func)) { // .'::'.
+		if (!method_exists($table_name,$prepare_func) && method_exists($table_name,$prepare_func2)) {
+			$prepare_func = $prepare_func2;
+			// !! trigger_error(debug::_('TABLE_GET_ITEMS_QUERY_NAME_DEPRECATED',$table_name.'::'.$query2),debug::DEPRECATED);
+		}
+
+		if (method_exists($table_name,$prepare_func)) {
 			$items = $table_name::$prepare_func($items);
 			if (!is_array($items)) {
 				trigger_error(debug::_('TABLE_GET_ITEMS_PREPARE_RESULT_IS_NOT_ARRAY',$table_name.'::'.$prepare_func),debug::WARNING);
@@ -1814,19 +1981,29 @@ class table {
 		$query = 'query'.ucfirst($query_name);
 		$query2 = 'query_'.$query_name;
 
-		if (!static_method_exists($table_name,$query) && !static_method_exists($table_name,$query2)) {
+		if (!method_exists($table_name,$query) && !method_exists($table_name,$query2)) {
 			trigger_error(debug::_('TABLE_GET_ITEM_QUERY_DOESNOT_EXIST',$table_name.'::'.$query),debug::WARNING);
 			return $default;
 		}
 
 		/* deprecated { */
-		if (!static_method_exists($table_name,$query) && static_method_exists($table_name,$query2)) {
+		if (!method_exists($table_name,$query) && method_exists($table_name,$query2)) {
 			$query = $query2;
 			// !! trigger_error(debug::_('TABLE_GET_ITEM_QUERY_NAME_DEPRECATED',$table_name.'::'.$query2),debug::DEPRECATED);
 		}
 		/* } */
 
 		$query_params = $table_name::$query();
+
+		if (!isset($query_params['table']) && !isset($query_params['union'])) {
+			if (!is_array($query_params)) {
+				$msg = 'TABLE_GET_ITEM_QUERY_MUST_BE_ARRAY';
+			} else {
+				$msg = 'TABLE_GET_ITEM_QUERY_TABLE_NOT_SET';
+			}
+			trigger_error(debug::_($msg,$table_name.'::'.$query),debug::WARNING);
+			return $default;
+		}
 
 		$query_params = self::extend_query($params,$query_params);
 
@@ -1837,7 +2014,13 @@ class table {
 		}
 
 		// prepare items
-		$prepare_func = 'prepare_'.$query_name;
+		$prepare_func = 'prepare'.ucfirst($query_name);
+		$prepare_func2 = 'prepare_'.$query_name;
+
+		if (!method_exists($table_name,$prepare_func) && method_exists($table_name,$prepare_func2)) {
+			$prepare_func = $prepare_func2;
+			// !! trigger_error(debug::_('TABLE_GET_ITEMS_QUERY_NAME_DEPRECATED',$table_name.'::'.$query2),debug::DEPRECATED);
+		}
 
 		if (method_exists($table_name,$prepare_func)) { // .'::'.
 			$item = $table_name::$prepare_func($item);
