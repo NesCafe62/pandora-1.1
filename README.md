@@ -16,7 +16,7 @@ And even have wide possabilities to override their behavior for match buiseness 
 
 This architecture needs to combine features of CMS (like from-a-box solutions) and frameworks (custom functionality).
 architecture goals:
-- less constarints of architecture
+- less constraints of architecture
 - more clean compact and high-level code in application
 - achieve any custom behavior without patching core (that can obstruct updates)
 - separate appliactions and core locations (to easier core updating and transferring applications and parts of them)
