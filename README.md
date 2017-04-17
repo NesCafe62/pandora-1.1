@@ -4,8 +4,8 @@ PHP framework for building web applications.
 
 # Concept:
 A fast and lightweight (inspired by jQuery phylosophy) framework that will allow to:
-- 1. get web-applications done faster
-- 2. prevent slowing down development in a long term
+1. get web-applications done faster
+2. prevent slowing down development in a long term
 
 CMS are good for quick start and frameworks are good in reaching 2nd goal.
 
